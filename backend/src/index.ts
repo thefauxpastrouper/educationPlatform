@@ -261,35 +261,100 @@ app.get("/price-transaction/:id", async (req, res) => {
   }
 });
 
+// Improved POST endpoint with better error handling
 app.post("/price-transaction", async (req, res) => {
   try {
     const { id, price, quantity, total } = req.body;
 
     // Validate input
     if (!id || !price || !quantity || !total) {
-      return res.status(400).json({ message: "Missing required fields" });
+      return res.status(400).json({ 
+        message: "Missing required fields",
+        received: { id, price, quantity, total }
+      });
     }
 
-    // Get latest price from cache
+    // Validate data types
+    if (typeof price !== 'number' || typeof quantity !== 'number' || typeof total !== 'number') {
+      return res.status(400).json({ 
+        message: "Price, quantity, and total must be numbers",
+        received: { price: typeof price, quantity: typeof quantity, total: typeof total }
+      });
+    }
+
+    // Get latest price - either from cache or fetch fresh
+    let latestPrice: number;
     const cached = transactionPriceCache.get(id);
     
-    if (!cached) {
-      return res.status(400).json({ 
-        message: "Please fetch the latest price first using GET /price-transaction/:id" 
-      });
+    if (cached && (Date.now() - cached.timestamp) < TRANSACTION_CACHE_DURATION) {
+      // Use cached price
+      latestPrice = cached.price;
+      console.log(`💾 Using cached price for ${id}: ${latestPrice}`);
+    } else {
+      // Fetch fresh price
+      console.log(`🔄 Fetching fresh price for ${id}...`);
+      try {
+        const response = await axios.get(
+          `https://api.coingecko.com/api/v3/coins/${id}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              "x-cg-demo-api-key": process.env.COINGECKO_API_KEY,
+            },
+            timeout: 10000
+          }
+        );
+
+        if (!response.data?.market_data?.current_price?.inr) {
+          return res.status(404).json({ 
+            message: "No market data found for this coin",
+            coinId: id 
+          });
+        }
+
+        latestPrice = response.data.market_data.current_price.inr;
+        
+        // Update cache
+        transactionPriceCache.set(id, { price: latestPrice, timestamp: Date.now() });
+        console.log(`✅ Fresh price fetched for ${id}: ${latestPrice}`);
+        
+      } catch (fetchError: any) {
+        console.error(`❌ Error fetching price for ${id}:`, fetchError.message);
+        return res.status(503).json({ 
+          message: "Failed to fetch latest price from CoinGecko",
+          error: fetchError.message 
+        });
+      }
     }
 
-    // Allow small price variance (0.5%) to account for slight delays
-    const priceVariance = Math.abs((price - cached.price) / cached.price);
+    // Allow small price variance (1%) to account for slight delays
+    const priceVariance = Math.abs((price - latestPrice) / latestPrice);
+    const ALLOWED_VARIANCE = 0.01; // 1%
     
-    if (priceVariance > 0.005) {
+    if (priceVariance > ALLOWED_VARIANCE) {
+      console.log(`⚠️ Price mismatch for ${id}: submitted=${price}, latest=${latestPrice}, variance=${(priceVariance * 100).toFixed(2)}%`);
       return res.status(400).json({ 
-        message: "Price does not match latest transaction.",
-        latestPrice: cached.price,
-        submittedPrice: price
+        message: "Price does not match latest market price",
+        latestPrice,
+        submittedPrice: price,
+        variancePercent: (priceVariance * 100).toFixed(2),
+        maxAllowedVariance: (ALLOWED_VARIANCE * 100).toFixed(2)
       });
     }
 
+    // Validate total calculation
+    const expectedTotal = price * quantity;
+    const totalVariance = Math.abs((total - expectedTotal) / expectedTotal);
+    
+    if (totalVariance > 0.001) { // 0.1% tolerance for rounding
+      return res.status(400).json({ 
+        message: "Total calculation mismatch",
+        expectedTotal,
+        receivedTotal: total
+      });
+    }
+
+    // Create and save order
     const order = new Order({ 
       coin_id: id, 
       coin_price: price, 
@@ -302,18 +367,32 @@ app.post("/price-transaction", async (req, res) => {
     // Clear market data cache to force refresh
     marketDataCache = null;
 
-    console.log("✅ Order saved:", { id, price, quantity, total });
+    console.log(`✅ Order saved: ${id} | Price: ₹${price} | Qty: ${quantity} | Total: ₹${total}`);
     
     // Emit update to all connected clients
     emitMarketData();
     
-    return res.json({ 
+    return res.status(201).json({ 
       message: "Order confirmed",
-      order: { id, price, quantity, total }
+      order: { 
+        id, 
+        price, 
+        quantity, 
+        total,
+        latestMarketPrice: latestPrice
+      }
     });
+    
   } catch (err: any) {
-    console.error("❌ Error saving order:", err.message);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("❌ Error in /price-transaction:", err);
+    console.error("Stack trace:", err.stack);
+    
+    // Return detailed error information
+    return res.status(500).json({ 
+      error: "Internal server error",
+      message: err.message,
+      details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
   }
 });
 
