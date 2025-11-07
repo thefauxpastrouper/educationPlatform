@@ -3,7 +3,7 @@ import http from "http";
 import { Server } from "socket.io";
 import axios from "axios";
 import dotenv from "dotenv";
-import mongoose from "mongoose";
+import mongoose, { type ConnectOptions } from "mongoose";
 import type EthereumData from "./types/types.js";
 import Order from "./db/db.js";
 import cors from "cors";
@@ -15,13 +15,22 @@ if (!MONGO_URI) {
   throw new Error("MONGO_URI environment variable is not set.");
 }
 
-mongoose.connect(MONGO_URI, {
-  authSource: "admin"
-}).then(() => {
+const mongooseOptions: ConnectOptions = {
+  serverSelectionTimeoutMS: 10000
+};
+
+const authSource = process.env.MONGO_AUTH_SOURCE;
+if (authSource) {
+  mongooseOptions.authSource = authSource;
+}
+
+mongoose.connect(MONGO_URI, mongooseOptions).then(() => {
   console.log("MongoDB connected!!");
 }).catch((e) => {
-  console.log(`Error connection to DB failed: ${e}`);
+  console.error(`Error connection to DB failed: ${e}`);
 });
+
+const isDatabaseConnected = () => mongoose.connection.readyState === 1;
 
 const app = express();
 const server = http.createServer(app);
@@ -265,6 +274,13 @@ app.get("/price-transaction/:id", async (req, res) => {
 app.post("/price-transaction", async (req, res) => {
   try {
     const { id, price, quantity, total } = req.body;
+
+    if (!isDatabaseConnected()) {
+      console.warn("⚠️ Database not connected, rejecting transaction request");
+      return res.status(503).json({ 
+        message: "Database not connected. Please try again shortly." 
+      });
+    }
 
     // Validate input
     if (!id || !price || !quantity || !total) {

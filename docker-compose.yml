@@ -1,54 +1,29 @@
 version: "3.9"
 
 services:
-  mongo4:
+  mongo:
     image: mongo:7
-    container_name: mongo4
+    container_name: mongo
     restart: always
     ports:
       - "27020:27020"
     volumes:
-      - mongo4_data:/data/db
-      - ./mongo-init:/docker-entrypoint-initdb.d
-    command: ["--replSet", "rs0", "--bind_ip_all"]
-    networks:
-      - app-network
-
-  mongo5:
-    image: mongo:7
-    container_name: mongo5
-    restart: always
-    volumes:
-      - mongo5_data:/data/db
-    command: ["--replSet", "rs0", "--bind_ip_all"]
-    networks:
-      - app-network
-
-  mongo6:
-    image: mongo:7
-    container_name: mongo6
-    restart: always
-    volumes:
-      - mongo6_data:/data/db
-    command: ["--replSet", "rs0", "--bind_ip_all"]
+      - mongo_data:/data/db
     networks:
       - app-network
 
   backend:
     build: ./backend
-    container_name: ep_backend
+    container_name: backend
     ports:
       - "4000:4000"
     environment:
       - NODE_ENV=production
       - PORT=4000
-      - CLIENT_URL=http://localhost:8000
       - COINGECKO_API_KEY=${COINGECKO_API_KEY:-}
-      - MONGO_URI=mongodb://mongo4:27020,mongo5:27020,mongo6:27020/tradingAppDB?replicaSet=rs0
+      - MONGO_URI=mongodb://mongo:27020/tradingAppDB
     depends_on:
-      - mongo4
-      - mongo5
-      - mongo6
+      - mongo
     networks:
       - app-network
 
@@ -62,7 +37,7 @@ services:
       - NODE_ENV=production
       - VITE_API_BASE_URL=${VITE_API_BASE_URL:-https://api.coingecko.com/api/v3}
       - API_KEY=${API_KEY:-}
-    container_name: ep_frontend
+    container_name: frontend
     ports:
       - "8000:80"
     depends_on:
@@ -71,9 +46,7 @@ services:
       - app-network
 
 volumes:
-  mongo4_data:
-  mongo5_data:
-  mongo6_data:
+  mongo_data:
 
 networks:
   app-network:
