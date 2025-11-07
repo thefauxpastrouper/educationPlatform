@@ -3,7 +3,7 @@ import http from "http";
 import { Server } from "socket.io";
 import axios from "axios";
 import dotenv from "dotenv";
-import mongoose, { type ConnectOptions } from "mongoose";
+import mongoose from "mongoose";
 import type EthereumData from "./types/types.js";
 import Order from "./db/db.js";
 import cors from "cors";
@@ -15,7 +15,7 @@ if (!MONGO_URI) {
   throw new Error("MONGO_URI environment variable is not set.");
 }
 
-const mongooseOptions: ConnectOptions = {
+const mongooseOptions: mongoose.ConnectOptions = {
   serverSelectionTimeoutMS: 10000
 };
 

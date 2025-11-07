@@ -3,12 +3,12 @@ version: "3.9"
 services:
   mongo:
     image: mongo:7
-    container_name: mongo
+    container_name: mongo_a
     restart: always
     ports:
       - "27020:27020"
     volumes:
-      - mongo_data:/data/db
+      - mongo_a_data:/data/db
     networks:
       - app-network
 
@@ -21,9 +21,9 @@ services:
       - NODE_ENV=production
       - PORT=4000
       - COINGECKO_API_KEY=${COINGECKO_API_KEY:-}
-      - MONGO_URI=mongodb://mongo:27020/tradingAppDB
+      - MONGO_URI=mongodb://mongo_a:27020/tradingAppDB
     depends_on:
-      - mongo
+      - mongo_a
     networks:
       - app-network
 
@@ -46,7 +46,7 @@ services:
       - app-network
 
 volumes:
-  mongo_data:
+  mongo_a_data:
 
 networks:
   app-network:
