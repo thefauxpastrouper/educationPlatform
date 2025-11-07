@@ -343,8 +343,13 @@ app.post("/price-transaction", async (req, res) => {
     }
 
     // Validate total calculation
-    const expectedTotal = price * quantity;
+    const TAX_RATE = 0.03; // 3%
+    const expectedTotal = (price * quantity)* TAX_RATE;
     const totalVariance = Math.abs((total - expectedTotal) / expectedTotal);
+    // 
+    // const subtotal = price * quantity;
+    // const taxes = Math.round(subtotal * TAX_RATE);
+    // const expectedTotal = subtotal + taxes;
     
     if (totalVariance > 0.001) { // 0.1% tolerance for rounding
       return res.status(400).json({ 
