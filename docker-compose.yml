@@ -1,35 +1,35 @@
 version: "3.9"
 
 services:
-  mongo1:
+  mongo4:
     image: mongo:7
-    container_name: mongo1
+    container_name: mongo4
     restart: always
     ports:
       - "27020:27020"
     volumes:
-      - mongo1_data:/data/db2
+      - mongo4_data:/data/db
       - ./mongo-init:/docker-entrypoint-initdb.d
     command: ["--replSet", "rs0", "--bind_ip_all"]
     networks:
       - app-network
 
-  mongo2:
+  mongo5:
     image: mongo:7
-    container_name: mongo2
+    container_name: mongo5
     restart: always
     volumes:
-      - mongo2_data:/data/db2
+      - mongo5_data:/data/db
     command: ["--replSet", "rs0", "--bind_ip_all"]
     networks:
       - app-network
 
-  mongo3:
+  mongo6:
     image: mongo:7
-    container_name: mongo3
+    container_name: mongo6
     restart: always
     volumes:
-      - mongo3_data:/data/db2
+      - mongo6_data:/data/db
     command: ["--replSet", "rs0", "--bind_ip_all"]
     networks:
       - app-network
@@ -46,9 +46,9 @@ services:
       - COINGECKO_API_KEY=${COINGECKO_API_KEY:-}
       - MONGO_URI=mongodb://mongo4:27020,mongo5:27020,mongo6:27020/tradingAppDB?replicaSet=rs0
     depends_on:
-      - mongo1
-      - mongo2
-      - mongo3
+      - mongo4
+      - mongo5
+      - mongo6
     networks:
       - app-network
 
@@ -71,9 +71,9 @@ services:
       - app-network
 
 volumes:
-  mongo1_data:
-  mongo2_data:
-  mongo3_data:
+  mongo4_data:
+  mongo5_data:
+  mongo6_data:
 
 networks:
   app-network:
