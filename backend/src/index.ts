@@ -29,7 +29,7 @@ const server = http.createServer(app);
 // Optimized Socket.IO configuration
 const io = new Server(server, {
   cors: { 
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: "https://tradingdelite.thefauxpastrouper.space",
     credentials: true
   },
   // Connection timeout and ping settings - AGGRESSIVE CLEANUP
@@ -50,7 +50,7 @@ const PORT = process.env.PORT || 4000;
 // Middleware (removed duplicate express.json())
 app.use(express.json());
 app.use(cors({
-  origin: process.env.CLIENT_URL || "http://localhost:5173",
+  origin: "https://tradingdelite.thefauxpastrouper.space",
   credentials: true
 }));
 
