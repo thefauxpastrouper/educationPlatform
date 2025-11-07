@@ -10,7 +10,7 @@ import { Button } from "./Button";
 import { Minus, Plus } from "lucide-react";
 
 const getCryptoDetails = async (id: string): AxiosPromise<EthereumData | null> => {
-  console.log("Fetching crypto details from API:", import.meta.env.VITE_API_BASE_URL);
+  console.log("Fetching crypto details from API: ", import.meta.env.VITE_API_BASE_URL);
   return api.get(`/coins/${id}`, {
     headers: {
       "Content-Type": "application/json",
@@ -34,7 +34,7 @@ const CryptoDetailsComponent = () => {
 
   async function priceFetching(id: string): Promise<number | null> {
     try {
-      const response = await axios.get(`https://api.tradingdelite.thefauxpastrouper.space/price-transaction/${id}`);
+      const response = await axios.get(`${import.meta.env.VITE_API_BACKEND_URL}/price-transaction/${id}`);
       const data = response.data;
 
       // Adjust this based on your backend response structure
@@ -66,13 +66,13 @@ const CryptoDetailsComponent = () => {
     const newTotal = newSubtotal + newTaxes;
 
     try {
-      const response = await axios.post("http://localhost:4000/price-transaction", {
+      const response = await axios.post(`${import.meta.env.VITE_API_BACKEND_URL}/price-transaction`, {
         id,
         price: fetchedPrice,
         quantity,
         total: newTotal,
       });
-      console.log("Transaction success:", response.data);
+      console.log("Transaction success: ", response.data);
 
       
 

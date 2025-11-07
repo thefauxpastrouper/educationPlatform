@@ -31,7 +31,7 @@ const getSocket = (): Socket => {
 
   const clientId = getClientId();
 
-  socketInstance = io('http://localhost:4000', {
+  socketInstance = io(`${import.meta.env.VITE_API_BACKEND_URL}`, {
     query: { clientId },
     transports: ['websocket'],
     reconnection: true,
