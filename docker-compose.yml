@@ -41,6 +41,10 @@ services:
       - "4000:4000"
     environment:
       - NODE_ENV=production
+      - PORT=4000
+      - CLIENT_URL=http://localhost:8000
+      - COINGECKO_API_KEY=${COINGECKO_API_KEY:-}
+      - MONGO_URI=mongodb://mongo1:27017,mongo2:27017,mongo3:27017/tradingAppDB?replicaSet=rs0
     depends_on:
       - mongo1
       - mongo2
@@ -51,8 +55,13 @@ services:
   frontend:
     build:
       context: ./frontend
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-https://api.coingecko.com/api/v3}
+        API_KEY: ${API_KEY:-}
     environment:
-      -NODE_ENV=production
+      - NODE_ENV=production
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-https://api.coingecko.com/api/v3}
+      - API_KEY=${API_KEY:-}
     container_name: frontend
     ports:
       - "8000:80"
