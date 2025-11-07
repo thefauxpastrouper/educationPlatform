@@ -34,7 +34,7 @@ const CryptoDetailsComponent = () => {
 
   async function priceFetching(id: string): Promise<number | null> {
     try {
-      const response = await axios.get(`http://localhost:4000/price-transaction/${id}`);
+      const response = await axios.get(`https://api.tradingdelite.thefauxpastrouper.space/price-transaction/${id}`);
       const data = response.data;
 
       // Adjust this based on your backend response structure
