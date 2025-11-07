@@ -6,7 +6,7 @@ services:
     container_name: mongo_a
     restart: always
     ports:
-      - "27020:27020"
+      - "27020:27017"
     volumes:
       - mongo_a_data:/data/db
     networks:
@@ -21,7 +21,7 @@ services:
       - NODE_ENV=production
       - PORT=4000
       - COINGECKO_API_KEY=${COINGECKO_API_KEY:-}
-      - MONGO_URI=mongodb://mongo_a:27020/tradingAppDB
+      - MONGO_URI=mongodb://mongo_a:27017/tradingAppDB
     depends_on:
       - mongo_a
     networks:
